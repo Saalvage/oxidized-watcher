@@ -1,61 +1,33 @@
-use figment::providers::{Format, Json};
-use serde::Deserialize;
 use serenity::prelude::*;
-use serenity::framework::standard::macros::*;
-use serenity::async_trait;
-use serenity::framework::standard::CommandResult;
+use serenity::client::ClientBuilder;
+use serenity::framework::standard::CommandGroup;
 use serenity::framework::StandardFramework;
-use serenity::model::prelude::*;
+use crate::commands::ping::*;
+use crate::config::Config;
 
-#[derive(Deserialize)]
-struct Config {
-    prefix: String,
-    token: String,
-}
+mod config;
+mod event_handler;
+mod commands;
 
-impl Config {
-    fn new() -> Config {
-        figment::Figment::new()
-            .join(Json::file("Config.json"))
-            .extract::<Config>()
-            .expect("Failed to load config")
+fn create_client(cfg: Config, command_groups: &[&'static CommandGroup]) -> ClientBuilder<'static> {
+    let mut framework = StandardFramework::new()
+        .configure(|c| c.prefix(cfg.prefix));
+
+    for g in command_groups {
+        framework.group_add(g);
     }
+
+    Client::builder(cfg.token)
+        .event_handler(event_handler::Handler)
+        .framework(framework)
 }
-
-#[group]
-#[commands(ping)]
-struct General;
-
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {}
 
 #[tokio::main]
 async fn main() {
-    let config = Config::new();
-
-    let framework = StandardFramework::new()
-        .configure(|c| c.prefix(config.prefix))
-        .group(&GENERAL_GROUP);
-
-    println!("Started!! :D");
-
-    let mut client = Client::builder(config.token)
-        .event_handler(Handler)
-        .framework(framework)
+    create_client(Config::new(), &[&GENERAL_GROUP])
         .await
-        .expect("Failed to create client");
-
-    println!("Started!! :D");
-
-    client.start().await.expect("Failed to start client");
-    println!("Started!! :D");
-}
-
-#[serenity::framework::standard::macros::command]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "Pong!").await?;
-
-    Ok(())
+        .expect("Failed to create client!")
+        .start()
+        .await
+        .expect("Failed to start client!");
 }
