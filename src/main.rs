@@ -1,14 +1,13 @@
 #[macro_use] extern crate diesel;
 
-use std::env;
 use std::sync::Arc;
-use diesel::{Connection, SqliteConnection};
+use diesel::PgConnection;
 use serenity::prelude::*;
 use serenity::client::ClientBuilder;
 use serenity::framework::standard::CommandGroup;
 use serenity::framework::StandardFramework;
-use crate::config::Config;
-use crate::database::models;
+use config::Config;
+use database::models;
 
 mod config;
 mod event_handler;
@@ -33,22 +32,16 @@ fn create_client(cfg: Config, command_groups: &[&'static CommandGroup]) -> Clien
 struct DatabaseConnection;
 
 impl TypeMapKey for DatabaseConnection {
-    type Value = Arc<Mutex<SqliteConnection>>;
+    type Value = Arc<Mutex<PgConnection>>;
 }
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
-    let db = env::var("DATABASE_URL").expect("Did not find database url");
-
-    let connection = diesel::sqlite::SqliteConnection::establish(&db)
-        .expect("Failed to connect to database");
-
     let mut client = create_client(Config::new(), &[&commands::GENERAL_GROUP])
         .await
         .expect("Failed to create client!");
 
-    let connection = Arc::new(Mutex::new(connection));
+    let connection = Arc::new(Mutex::new(database::set_up_db()));
     client.data.write().await.insert::<DatabaseConnection>(connection);
 
     client.start()

@@ -1,9 +1,9 @@
 table! {
     notes (id) {
-        id -> Integer,
-        kind -> SmallInt,
-        user -> BigInt,
-        issuer -> BigInt,
+        id -> Int8,
+        kind -> Int2,
+        user_id -> Int8,
+        issuer_id -> Int8,
         info -> Text,
     }
 }
