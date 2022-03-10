@@ -1,6 +1,18 @@
-use serenity::framework::standard::CommandResult;
-use serenity::model::prelude::*;
-use serenity::prelude::*;
+mod prelude {
+    pub use serenity::framework::standard::CommandResult;
+    pub use serenity::framework::standard::macros::command;
+    pub use serenity::model::prelude::*;
+    pub use serenity::prelude::*;
+}
+
+mod ping;
+mod note;
+
+use ping::*;
+use note::*;
+
 use serenity::framework::standard::macros::*;
 
-pub mod ping;
+#[group]
+#[commands(ping, note, notes)]
+struct General;
