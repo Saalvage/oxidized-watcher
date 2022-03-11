@@ -4,21 +4,34 @@ use std::sync::Arc;
 use diesel::PgConnection;
 use serenity::prelude::*;
 use serenity::client::ClientBuilder;
-use serenity::framework::standard::CommandGroup;
+use serenity::framework::standard::{CommandError, CommandGroup};
 use serenity::framework::StandardFramework;
+use serenity::framework::standard::macros::*;
+use serenity::model::prelude::*;
 use config::Config;
 use database::models;
+use crate::util::display_name;
 
 mod config;
 mod event_handler;
+mod util;
 
 mod commands;
 
 mod database;
 
+#[hook]
+async fn after_hook(_ctx: &Context, msg: &Message, _cmd_name: &str, err: Result<(), CommandError>) {
+    if let Err(err) = err {
+        println!("Failed to execute command \"{}\" by {}, with error: {:?}",
+                 msg.content, display_name(&msg.author), err);
+    }
+}
+
 fn create_client(cfg: Config, command_groups: &[&'static CommandGroup]) -> ClientBuilder<'static> {
     let mut framework = StandardFramework::new()
-        .configure(|c| c.prefix(cfg.prefix));
+        .configure(|c| c.prefix(cfg.prefix))
+        .after(after_hook);
 
     for g in command_groups {
         framework.group_add(g);
