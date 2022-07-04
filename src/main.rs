@@ -4,7 +4,7 @@ use std::sync::Arc;
 use diesel::PgConnection;
 use serenity::prelude::*;
 use serenity::client::ClientBuilder;
-use serenity::framework::standard::{CommandError, CommandGroup};
+use serenity::framework::standard::{CommandGroup, CommandResult};
 use serenity::framework::StandardFramework;
 use serenity::framework::standard::macros::*;
 use serenity::model::prelude::*;
@@ -21,7 +21,7 @@ mod commands;
 mod database;
 
 #[hook]
-async fn after_hook(_ctx: &Context, msg: &Message, _cmd_name: &str, err: Result<(), CommandError>) {
+async fn after_hook(_ctx: &Context, msg: &Message, _cmd_name: &str, err: CommandResult) {
     if let Err(err) = err {
         println!("Failed to execute command \"{}\" by {}, with error: {:?}",
                  msg.content, display_name(&msg.author), err);
